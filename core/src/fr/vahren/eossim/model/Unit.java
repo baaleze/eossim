@@ -1,5 +1,7 @@
 package fr.vahren.eossim.model;
 
+import squidpony.squidmath.Coord;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +12,8 @@ public interface Unit {
 
     int level = 1;
     String name = "default unit";
+
+    Coord position = null;
 
     int str = 0;
     int dex = 0;
