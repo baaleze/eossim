@@ -124,7 +124,7 @@ public class ESGame extends ApplicationAdapter {
         //sections of pre-drawn dungeon and drops them into place in a tiling pattern. It makes good "ruined" dungeons.
         dungeonGen = new DungeonGenerator(gridWidth, gridHeight, rng);
         //uncomment this next line to randomly add water to the dungeon in pools.
-        //dungeonGen.addWater(15);
+        dungeonGen.addWater(15);
         //decoDungeon is given the dungeon with any decorations we specified. (Here, we didn't, unless you chose to add
         //water to the dungeon. In that case, decoDungeon will have different contents than bareDungeon, next.)
         decoDungeon = dungeonGen.generate();
@@ -150,8 +150,8 @@ public class ESGame extends ApplicationAdapter {
         //creatures, and possibly a subclass for the player.
         player = dungeonGen.utility.randomCell(placement);
         //This is used to allow clicks or taps to take the player to the desired area.
-        toCursor = new ArrayList<Coord>(100);
-        awaitedMoves = new ArrayList<Coord>(100);
+        toCursor = new ArrayList<>(100);
+        awaitedMoves = new ArrayList<>(100);
         //DijkstraMap is the pathfinding swiss-army knife we use here to find a path to the latest cursor position.
         playerToCursor = new DijkstraMap(decoDungeon, DijkstraMap.Measurement.MANHATTAN);
         bgColor = SColor.DARK_SLATE_GRAY;
