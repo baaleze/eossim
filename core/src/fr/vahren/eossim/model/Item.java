@@ -1,12 +1,17 @@
 package fr.vahren.eossim.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by fdroumaguet on 23/03/2017.
  */
-public interface Item {
+public abstract class Item {
 
-    String name = "default item";
+    public String name = "default item";
 
-    int level = 1;
+    public int level = 1;
+
+    public List<Effect> effects = new ArrayList<>();
 
 }

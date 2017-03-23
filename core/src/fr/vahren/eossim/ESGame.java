@@ -9,6 +9,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
+import fr.vahren.eossim.model.Player;
+import fr.vahren.eossim.model.Unit;
 import squidpony.FakeLanguageGen;
 import squidpony.GwtCompatibility;
 import squidpony.squidai.DijkstraMap;
@@ -47,18 +49,19 @@ public class ESGame extends ApplicationAdapter {
     private char[][] decoDungeon, bareDungeon, lineDungeon, spaces;
     private int[][] colorIndices, bgColorIndices, languageBG, languageFG;
     /** In number of cells */
-    private int gridWidth;
+    public static int gridWidth;
     /** In number of cells */
-    private int gridHeight;
+    public static int gridHeight;
     /** The pixel width of a cell */
-    private int cellWidth;
+    public static int cellWidth;
     /** The pixel height of a cell */
-    private int cellHeight;
+    public static int cellHeight;
     private SquidInput input;
     private Color bgColor;
     private Stage stage;
     private DijkstraMap playerToCursor;
-    private Coord cursor, player;
+    private Coord cursor;
+    private Unit player;
     private ArrayList<Coord> toCursor;
     private ArrayList<Coord> awaitedMoves;
     private float secondsWithoutMoves;
@@ -148,7 +151,8 @@ public class ESGame extends ApplicationAdapter {
         cursor = Coord.get(-1, -1);
         //player is, here, just a Coord that stores his position. In a real game, you would probably have a class for
         //creatures, and possibly a subclass for the player.
-        player = dungeonGen.utility.randomCell(placement);
+        player = new Player();
+        player.position = dungeonGen.utility.randomCell(placement);
         //This is used to allow clicks or taps to take the player to the desired area.
         toCursor = new ArrayList<>(100);
         awaitedMoves = new ArrayList<>(100);
@@ -241,7 +245,7 @@ public class ESGame extends ApplicationAdapter {
                     case 'W':
                     {
                         //-1 is up on the screen
-                        move(0, -1);
+                        player.move(0, -1,bareDungeon);
                         break;
                     }
                     case SquidInput.DOWN_ARROW:
@@ -251,7 +255,7 @@ public class ESGame extends ApplicationAdapter {
                     case 'S':
                     {
                         //+1 is down on the screen
-                        move(0, 1);
+                        player.move(0, 1,bareDungeon);
                         break;
                     }
                     case SquidInput.LEFT_ARROW:
@@ -260,7 +264,7 @@ public class ESGame extends ApplicationAdapter {
                     case 'H':
                     case 'A':
                     {
-                        move(-1, 0);
+                        player.move(-1, 0,bareDungeon);
                         break;
                     }
                     case SquidInput.RIGHT_ARROW:
@@ -269,7 +273,7 @@ public class ESGame extends ApplicationAdapter {
                     case 'L':
                     case 'D':
                     {
-                        move(1, 0);
+                        player.move(1, 0,bareDungeon);
                         break;
                     }
                     case 'Q':
@@ -297,9 +301,9 @@ public class ESGame extends ApplicationAdapter {
                         cursor = Coord.get(screenX, screenY);
                         //This uses DijkstraMap.findPath to get a possibly long path from the current player position
                         //to the position the user clicked on.
-                        toCursor = playerToCursor.findPath(100, null, null, player, cursor);
+                        toCursor = playerToCursor.findPath(100, null, null, player.position, cursor);
                     }
-                    awaitedMoves = new ArrayList<Coord>(toCursor);
+                    awaitedMoves = new ArrayList<>(toCursor);
                 }
                 return false;
             }
@@ -320,7 +324,7 @@ public class ESGame extends ApplicationAdapter {
                     return false;
                 }
                 cursor = Coord.get(screenX, screenY);
-                toCursor = playerToCursor.findPath(100, null, null, player, cursor);
+                toCursor = playerToCursor.findPath(100, null, null, player.position, cursor);
                 return false;
             }
         }));
@@ -332,22 +336,7 @@ public class ESGame extends ApplicationAdapter {
         stage.addActor(display);
 
     }
-    /**
-     * Move the player if he isn't bumping into a wall or trying to go off the map somehow.
-     * In a fully-fledged game, this would not be organized like this, but this is a one-file demo.
-     * @param xmod
-     * @param ymod
-     */
-    private void move(int xmod, int ymod) {
-        int newX = player.x + xmod, newY = player.y + ymod;
-        if (newX >= 0 && newY >= 0 && newX < gridWidth && newY < gridHeight
-                && bareDungeon[newX][newY] != '#')
-        {
-            player = player.translate(xmod, ymod);
-        }
-        // loops through the text snippets displayed whenever the player moves
-        langIndex = (langIndex + 1) % lang.length;
-    }
+
 
     /**
      * Draws the map, applies any highlighting for the path to the cursor, and then draws the player.
@@ -365,7 +354,7 @@ public class ESGame extends ApplicationAdapter {
             display.highlight(pt.x, pt.y, 100);
         }
         //places the player as an '@' at his position in orange (6 is an index into SColor.LIMITED_PALETTE).
-        display.put(player.x, player.y, '@', 6);
+        display.put(player.position.x, player.position.y, '@', 6);
         // for clarity, you could replace the above line with the uncommented line below
         //display.put(player.x, player.y, '@', SColor.INTERNATIONAL_ORANGE);
         // since this is what 6 refers to, a color constant in a palette where 6 refers to this shade of orange.
@@ -399,7 +388,7 @@ public class ESGame extends ApplicationAdapter {
                 secondsWithoutMoves = 0;
                 Coord m = awaitedMoves.remove(0);
                 toCursor.remove(0);
-                move(m.x - player.x, m.y - player.y);
+                player.move(m.x - player.position.x, m.y - player.position.y,bareDungeon);
             }
         }
         // if we are waiting for the player's input and get input, process it.
@@ -423,6 +412,6 @@ public class ESGame extends ApplicationAdapter {
         // you may need to change this if your game has multiple sections, like a SquidMessageBox or other widget below
         // the main grid of the game. If a game uses VisualInput, then that way of handling input will need to be told
         // about the changes to the screen as well.
-		input.getMouse().reinitialize((float) width / this.gridWidth, (float)height / (this.gridHeight + 8), this.gridWidth, this.gridHeight, 0, 0);
+		input.getMouse().reinitialize((float) width / gridWidth, (float)height / (gridHeight + 8), gridWidth, gridHeight, 0, 0);
 	}
 }
