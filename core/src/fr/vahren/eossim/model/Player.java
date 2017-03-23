@@ -5,5 +5,8 @@ package fr.vahren.eossim.model;
  */
 public class Player extends Unit {
 
+    public Player(){
+        g = '@';
+    }
 
 }

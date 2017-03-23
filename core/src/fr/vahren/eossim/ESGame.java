@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
+import fr.vahren.eossim.model.Enemy;
 import fr.vahren.eossim.model.Player;
 import fr.vahren.eossim.model.Unit;
 import squidpony.FakeLanguageGen;
@@ -23,6 +24,7 @@ import squidpony.squidmath.RNG;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * The main class of the game, constructed once in each of the platform-specific Launcher classes. Doesn't use any
@@ -67,6 +69,7 @@ public class ESGame extends ApplicationAdapter {
     private float secondsWithoutMoves;
     private String[] lang;
     private int langIndex = 0;
+    private List<Enemy> enemies = new ArrayList<>();
     @Override
     public void create () {
         //These variables, corresponding to the screen's width and height in cells and a cell's width and height in
@@ -153,6 +156,15 @@ public class ESGame extends ApplicationAdapter {
         //creatures, and possibly a subclass for the player.
         player = new Player();
         player.position = dungeonGen.utility.randomCell(placement);
+
+        // Random monsters
+        Enemy e1 = new Enemy();
+        e1.position = dungeonGen.utility.randomCell(placement);
+        Enemy e2 = new Enemy();
+        e2.position = dungeonGen.utility.randomCell(placement);
+        enemies.add(e1);
+        enemies.add(e2);
+
         //This is used to allow clicks or taps to take the player to the desired area.
         toCursor = new ArrayList<>(100);
         awaitedMoves = new ArrayList<>(100);
@@ -354,7 +366,11 @@ public class ESGame extends ApplicationAdapter {
             display.highlight(pt.x, pt.y, 100);
         }
         //places the player as an '@' at his position in orange (6 is an index into SColor.LIMITED_PALETTE).
-        display.put(player.position.x, player.position.y, '@', 6);
+        player.render(display);
+        for(Enemy e:enemies){
+            e.render(display);
+        }
+
         // for clarity, you could replace the above line with the uncommented line below
         //display.put(player.x, player.y, '@', SColor.INTERNATIONAL_ORANGE);
         // since this is what 6 refers to, a color constant in a palette where 6 refers to this shade of orange.

@@ -1,5 +1,6 @@
 package fr.vahren.eossim.model;
 
+import squidpony.squidgrid.gui.gdx.SquidLayers;
 import squidpony.squidmath.Coord;
 
 import java.util.ArrayList;
@@ -105,8 +106,15 @@ public abstract class Unit {
     public int currentEnergy(){
         return computeCurrentStat(Stat.NRG);
     }
+    public int bonusEsquive(){
+        return computeCurrentStat(Stat.ESQ);
+    }
 
     public void translate(int xmod, int ymod) {
         position = position.translate(xmod,ymod);
+    }
+
+    public void render(SquidLayers display) {
+        display.put(position.x, position.y, g, 6);
     }
 }
