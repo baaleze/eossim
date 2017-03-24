@@ -13,6 +13,7 @@ import static fr.vahren.eossim.ESGame.rng;
 
 /**
  * Created by fdroumaguet on 23/03/2017.
+ * A unit.
  */
 public abstract class Unit {
 
@@ -38,9 +39,9 @@ public abstract class Unit {
     /**
      * Move the player if he isn't bumping into a wall or trying to go off the map somehow.
      * In a fully-fledged game, this would not be organized like this, but this is a one-file demo.
-     * @param xmod
-     * @param ymod
-     * @param bareDungeon
+     * @param xmod delta x
+     * @param ymod delta y
+     * @param bareDungeon the dungeon structure
      */
     public void move(int xmod, int ymod, char[][] bareDungeon) {
         int newX = position.x + xmod, newY = position.y + ymod;
@@ -57,7 +58,7 @@ public abstract class Unit {
      * @return true if it hits
      */
     public boolean doesHit(Unit target){
-        int chance = Math.max(20,100-5*(currentDex()-target.currentDex()));
+        int chance = Math.max(20,100-5*(currentStat(Stat.DEX)-target.currentStat(Stat.DEX)));
         return rng.between(1,100) < chance;
     }
 
@@ -80,70 +81,67 @@ public abstract class Unit {
                 statBonus = statBonus/w.statRequirements.size();
 
                 // [Dmg] = [BaseDamage]+[StatBonus] - [Res]
-                dmg += w.baseDamage + statBonus - (w.elem ? target.currentElemRes() : target.currentPhyRes());
+                dmg += w.baseDamage + statBonus - (w.elem ? target.currentStat(Stat.ERS) : target.currentStat(Stat.RES));
             }
         }
         return Math.max(0,dmg);
     }
 
 
-    public int maxHp(){
-        return str*2+5;
-    }
-    public int maxEnergy(){
-        return voo*2+5;
-    }
-
-    public int currentStr(){
-        return computeCurrentStat(Stat.STR);
-    }
-
-    public int currentDex(){
-        return computeCurrentStat(Stat.DEX);
-    }
-    public int currentAff(){
-        return computeCurrentStat(Stat.AFF);
-    }
-    public int currentVoo(){
-        return computeCurrentStat(Stat.VOO);
-    }
-    public int currentCha(){
-        return computeCurrentStat(Stat.CHA);
-    }
-
-    public int currentStat(Stat s){
-        switch (s){
-            case HP:
-                return currentHp();
-            case AFF:
-                return currentAff();
-            case ARM:
-                return currentArmor();
-            case CHA:
-                return currentCha();
-            case DEX:
-                return currentDex();
-            case ERS:
-                return currentElemRes();
-            case ESQ:
-                return bonusEsquive();
-            case NRG:
-                return currentEnergy();
-            case RES:
-                return currentPhyRes();
-            case SRS:
-                return currentSpellRes();
+    /**
+     * Compute stats from base stat and equipement.
+     * Gets the base stat then loop over equipement to add bonuses.
+     * @param stat the stat to compute
+     * @return final stat value
+     */
+    public int currentStat(Stat stat) {
+        int base;
+        switch (stat){
             case STR:
-                return currentStr();
+                base = str;
+                break;
+            case DEX:
+                base = dex;
+                break;
+            case CHA:
+                base = cha;
+                break;
             case VOO:
-                return currentVoo();
+                base = voo;
+                break;
+            case AFF:
+                base = aff;
+                break;
+            case NRG:
+                base = energy;
+                break;
+            case HP:
+                base = hp;
+                break;
+            case MAXHP:
+                base = str*2+5;
+                break;
+            case MAXNRG:
+                base = voo*2+5;
+                break;
+            case ARM:
+                base = 0;
+                break;
+            case ERS:
+                base = aff/2;
+                break;
+            case SRS:
+                base = voo/2;
+                break;
+            case ESQ:
+                base = 0;
+                break;
+            case RES:
+                base = str/2;
+                break;
             default:
-                return 0;
+                base = 0;
         }
-    }
-
-    private int computeCurrentStat(Stat stat) {
-        int base = str;
         for(Item e:equipement){
             for(Effect eff:e.effects){
                 if(eff instanceof StatEffect && ((StatEffect)eff).stat == stat){
@@ -152,28 +150,6 @@ public abstract class Unit {
             }
         }
         return base;
-    }
-
-    public int currentArmor(){
-        return computeCurrentStat(Stat.ARM);
-    }
-    public int currentPhyRes(){
-        return computeCurrentStat(Stat.RES);
-    }
-    public int currentElemRes(){
-        return computeCurrentStat(Stat.ERS);
-    }
-    public int currentSpellRes(){
-        return computeCurrentStat(Stat.SRS);
-    }
-    public int currentHp(){
-        return computeCurrentStat(Stat.HP);
-    }
-    public int currentEnergy(){
-        return computeCurrentStat(Stat.NRG);
-    }
-    public int bonusEsquive(){
-        return computeCurrentStat(Stat.ESQ);
     }
 
     public void translate(int xmod, int ymod) {
