@@ -9,4 +9,9 @@ public class Player extends Unit {
         g = '@';
     }
 
+
+    @Override
+    protected void onDeath(Unit source) {
+
+    }
 }

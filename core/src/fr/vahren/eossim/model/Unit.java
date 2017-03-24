@@ -1,5 +1,7 @@
 package fr.vahren.eossim.model;
 
+import com.badlogic.gdx.graphics.Color;
+import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidgrid.gui.gdx.SquidLayers;
 import squidpony.squidmath.Coord;
 
@@ -34,6 +36,7 @@ public abstract class Unit {
 
     public int hp = 0;
     public int energy = 0;
+    protected Color color = SColor.DARK_BLUE_LAPIS_LAZULI;
 
 
     /**
@@ -157,6 +160,20 @@ public abstract class Unit {
     }
 
     public void render(SquidLayers display) {
-        display.put(position.x, position.y, g, 6);
+        display.put(position.x, position.y, g, color);
     }
+
+    /**
+     * Applies damage
+     * @param source Attacker
+     * @param dmg damage value
+     */
+    public void damage(Unit source,int dmg){
+        hp -= dmg;
+        if(hp<=0){
+            onDeath(source);
+        }
+    }
+
+    protected abstract void onDeath(Unit source);
 }

@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
+import fr.vahren.eossim.graphics.ESGraphics;
 import fr.vahren.eossim.model.Enemy;
 import fr.vahren.eossim.model.Player;
 import fr.vahren.eossim.model.Unit;
@@ -50,14 +51,22 @@ public class ESGame extends ApplicationAdapter {
     private DungeonGenerator dungeonGen;
     private char[][] decoDungeon, bareDungeon, lineDungeon, spaces;
     private int[][] colorIndices, bgColorIndices, languageBG, languageFG;
-    /** In number of cells */
-    public static int gridWidth;
-    /** In number of cells */
-    public static int gridHeight;
+    /** Map W */
+    public static int gridWidth = 80;
+    /** Map H */
+    public static int gridHeight = 32;
+    /** Text W */
+    public static int invWidth = 16;
+    /** Text H */
+    public static int invHeight = 32;
+    /** Status W */
+    public static int statusWidth = 96;
+    /** Status H */
+    public static int statusHeight = 16;
     /** The pixel width of a cell */
-    public static int cellWidth;
+    public static int cellWidth = 8;
     /** The pixel height of a cell */
-    public static int cellHeight;
+    public static int cellHeight = 16;
     private SquidInput input;
     private Color bgColor;
     private Stage stage;
@@ -70,6 +79,9 @@ public class ESGame extends ApplicationAdapter {
     private String[] lang;
     private int langIndex = 0;
     private List<Enemy> enemies = new ArrayList<>();
+    /** The game graphic utilities class */
+    public static ESGraphics graphics;
+
     @Override
     public void create () {
         //These variables, corresponding to the screen's width and height in cells and a cell's width and height in
@@ -90,17 +102,14 @@ public class ESGame extends ApplicationAdapter {
         //of an individual cell. The font will look more crisp if the cell dimensions match the config multipliers
         //exactly, and the stretchable fonts (technically, distance field fonts) can resize to non-square sizes and
         //still retain most of that crispness.
-        gridWidth = 80;
-        gridHeight = 24;
-        cellWidth = 11;
-        cellHeight = 22;
+
         // gotta have a random number generator. We can seed an RNG with any long we want, or even a String.
         rng = new RNG("SquidLib!");
 
         //Some classes in SquidLib need access to a batch to render certain things, so it's a good idea to have one.
         batch = new SpriteBatch();
         //Here we make sure our Stage, which holds any text-based grids we make, uses our Batch.
-        stage = new Stage(new StretchViewport(gridWidth * cellWidth, (gridHeight + 8) * cellHeight), batch);
+        stage = new Stage(new StretchViewport(statusWidth * cellWidth, (gridHeight + statusHeight) * cellHeight), batch);
 
         // display is a SquidLayers object, and that class has a very large number of similar methods for placing text
         // on a grid, with an optional background color and lightness modifier per cell. It also handles animations and
@@ -112,7 +121,8 @@ public class ESGame extends ApplicationAdapter {
         // layout of text in a cell, among other things. DefaultResources stores pre-configured BitmapFont objects but
         // also some TextCellFactory objects for distance field fonts; either one can be passed to this constructor.
         // the font will try to load Inconsolata-LGC-Square as a bitmap font with a distance field effect.
-        display = new SquidLayers(gridWidth, gridHeight + 8, cellWidth, cellHeight, DefaultResources.getStretchableFont());
+        display = new SquidLayers(statusWidth, gridHeight + statusHeight, cellWidth, cellHeight, DefaultResources.getStretchableFont());
+        graphics = new ESGraphics(display);
         // a bit of a hack to increase the text height slightly without changing the size of the cells they're in.
         // this causes a tiny bit of overlap between cells, which gets rid of an annoying gap between vertical lines.
         // if you use '#' for walls instead of box drawing chars, you don't need this.
@@ -182,9 +192,9 @@ public class ESGame extends ApplicationAdapter {
         // So, you can think of the class more like "Gwt, and also Compatibility".
         // fill2D constructs a 2D array filled with one item. Other methods can insert a
         // 2D array into a differently-sized 2D array, or copy a 2D array of various types.
-        spaces = GwtCompatibility.fill2D(' ', gridWidth, 6);
-        languageBG = GwtCompatibility.fill2D(1, gridWidth, 6);
-        languageFG = GwtCompatibility.fill2D(0, gridWidth, 6);
+        spaces = GwtCompatibility.fill2D(' ', statusWidth, statusHeight-2);
+        languageBG = GwtCompatibility.fill2D(1, statusWidth, statusHeight-2);
+        languageFG = GwtCompatibility.fill2D(0, statusWidth, statusHeight-2);
 
         // this creates an array of sentences, where each imitates a different sort of language or mix of languages.
         // this serves to demonstrate the large amount of glyphs SquidLib supports.
@@ -302,7 +312,7 @@ public class ESGame extends ApplicationAdapter {
                 //input and converts it to grid coordinates (here, a cell is 12 wide and 24 tall, so clicking at the
                 // pixel position 15,51 will pass screenX as 1 (since if you divide 15 by 12 and round down you get 1),
                 // and screenY as 2 (since 51 divided by 24 rounded down is 2)).
-                new SquidMouse(cellWidth, cellHeight, gridWidth, gridHeight, 0, 0, new InputAdapter() {
+                new SquidMouse(cellWidth, cellHeight, statusWidth, gridHeight+statusHeight, 0, 0, new InputAdapter() {
 
             // if the user clicks and there are no awaitedMoves queued up, generate toCursor if it
             // hasn't been generated already by mouseMoved, then copy it over to awaitedMoves.
@@ -355,33 +365,29 @@ public class ESGame extends ApplicationAdapter {
      */
     public void putMap()
     {
+        // MAP
         for (int i = 0; i < gridWidth; i++) {
             for (int j = 0; j < gridHeight; j++) {
                 display.put(i, j, lineDungeon[i][j], colorIndices[i][j], bgColorIndices[i][j], 40);
             }
         }
+        // PATH
         for (Coord pt : toCursor)
         {
             // use a brighter light to trace the path to the cursor, from 170 max lightness to 0 min.
             display.highlight(pt.x, pt.y, 100);
         }
+
+        // UNITS
         //places the player as an '@' at his position in orange (6 is an index into SColor.LIMITED_PALETTE).
         player.render(display);
         for(Enemy e:enemies){
             e.render(display);
         }
 
-        // for clarity, you could replace the above line with the uncommented line below
-        //display.put(player.x, player.y, '@', SColor.INTERNATIONAL_ORANGE);
-        // since this is what 6 refers to, a color constant in a palette where 6 refers to this shade of orange.
-        // You could experiment with different SColors; the JavaDocs for each color show a nice preview.
-        // To view JavaDocs for a field, you can use Ctrl-Q in IntelliJ IDEA and Android Studio, or
-        // just mouse over in Eclipse.
-        // SColor extends Color, so you can use an SColor anywhere a Color is expected.
-
         // The arrays we produced in create() are used here to provide a blank area behind text
         display.put(0, gridHeight + 1, spaces, languageFG, languageBG);
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < statusHeight-2; i++) {
             display.putString(2, gridHeight + i + 1, lang[(langIndex + i) % lang.length], 0, 1);
         }
     }
@@ -428,6 +434,6 @@ public class ESGame extends ApplicationAdapter {
         // you may need to change this if your game has multiple sections, like a SquidMessageBox or other widget below
         // the main grid of the game. If a game uses VisualInput, then that way of handling input will need to be told
         // about the changes to the screen as well.
-		input.getMouse().reinitialize((float) width / gridWidth, (float)height / (gridHeight + 8), gridWidth, gridHeight, 0, 0);
+		input.getMouse().reinitialize((float) width / statusWidth, (float)height / (gridHeight + statusHeight), gridWidth, gridHeight, 0, 0);
 	}
 }
