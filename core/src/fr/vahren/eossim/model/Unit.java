@@ -5,9 +5,11 @@ import squidpony.squidmath.Coord;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static fr.vahren.eossim.ESGame.gridHeight;
 import static fr.vahren.eossim.ESGame.gridWidth;
+import static fr.vahren.eossim.ESGame.rng;
 
 /**
  * Created by fdroumaguet on 23/03/2017.
@@ -49,7 +51,40 @@ public abstract class Unit {
         }
     }
 
+    /**
+     * Checks if the unit hits the target
+     * @param target The target of the attack
+     * @return true if it hits
+     */
+    public boolean doesHit(Unit target){
+        int chance = Math.max(20,100-5*(currentDex()-target.currentDex()));
+        return rng.between(1,100) < chance;
+    }
 
+    /**
+     * Compute damage done by this unit with all its weapons on the target.
+     * @param target Target unit of the attack.
+     * @return Damage output.
+     */
+    public int getDamage(Unit target){
+        int dmg = 0;
+        for(Item eq:equipement) {
+            if(eq instanceof Weapon) {
+                Weapon w = (Weapon)eq;
+
+                //[StatBonus] = SumForEachStat([Stat] - [RequiredStat])/NbStats
+                double statBonus = 0.0;
+                for(Map.Entry<Stat,Integer> stat:w.statRequirements.entrySet()){
+                    statBonus += currentStat(stat.getKey()) - stat.getValue();
+                }
+                statBonus = statBonus/w.statRequirements.size();
+
+                // [Dmg] = [BaseDamage]+[StatBonus] - [Res]
+                dmg += w.baseDamage + statBonus - (w.elem ? target.currentElemRes() : target.currentPhyRes());
+            }
+        }
+        return Math.max(0,dmg);
+    }
 
 
     public int maxHp(){
@@ -74,6 +109,37 @@ public abstract class Unit {
     }
     public int currentCha(){
         return computeCurrentStat(Stat.CHA);
+    }
+
+    public int currentStat(Stat s){
+        switch (s){
+            case HP:
+                return currentHp();
+            case AFF:
+                return currentAff();
+            case ARM:
+                return currentArmor();
+            case CHA:
+                return currentCha();
+            case DEX:
+                return currentDex();
+            case ERS:
+                return currentElemRes();
+            case ESQ:
+                return bonusEsquive();
+            case NRG:
+                return currentEnergy();
+            case RES:
+                return currentPhyRes();
+            case SRS:
+                return currentSpellRes();
+            case STR:
+                return currentStr();
+            case VOO:
+                return currentVoo();
+            default:
+                return 0;
+        }
     }
 
     private int computeCurrentStat(Stat stat) {

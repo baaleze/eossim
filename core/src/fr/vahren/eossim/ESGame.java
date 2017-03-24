@@ -45,7 +45,7 @@ import java.util.List;
 // perfectly fine for these uses.
 public class ESGame extends ApplicationAdapter {
     SpriteBatch batch;
-    private RNG rng;
+    public static RNG rng;
     private SquidLayers display;
     private DungeonGenerator dungeonGen;
     private char[][] decoDungeon, bareDungeon, lineDungeon, spaces;
